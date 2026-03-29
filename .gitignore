@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment secrets — NEVER commit these
+.env
+*.env.local
+*.env.production
+
+# Build output
+dist/
+build/
+
+# Python virtual environment
+venv/
+.venv/
+
+# Temp files
+temp/
+tmp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Capacitor
+android/
+ios/

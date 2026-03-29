@@ -1,0 +1,6 @@
+{
+  "appId": "com.shahanlab.aiassessment",
+  "appName": "ShahanLab AI",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
