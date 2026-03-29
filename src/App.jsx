@@ -830,6 +830,7 @@ const App = () => {
   const [currentTheme, setCurrentTheme] = useState('purple');
   const [userApiKey, setUserApiKey] = useState(DEFAULT_API_KEY);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const themeColor = THEMES[currentTheme];
 
   // Lifted Global State Objects
@@ -857,7 +858,7 @@ const App = () => {
   ];
 
   return (
-    <div className={`flex h-screen transition-all duration-700 font-sans overflow-hidden ${darkMode ? 'bg-[#050505] text-white' : 'bg-[#F9FAFB] text-slate-900'}`}>
+    <div className={`min-h-screen font-inter flex transition-colors duration-500 overflow-hidden ${darkMode ? 'bg-[#0F141A] text-white' : 'bg-[#FAFBFE] text-slate-800'}`}>
       
       {/* Animated Background Mesh */}
       <div className="fixed inset-0 pointer-events-none opacity-20 transition-opacity duration-1000">
@@ -865,73 +866,71 @@ const App = () => {
         <div className="absolute bottom-0 left-0 w-[800px] h-[800px] blur-[150px] rounded-full -translate-x-1/2 translate-y-1/2 bg-blue-500/20" />
       </div>
 
-      {/* Sidebar */}
-      <aside className={`relative z-30 w-80 border-r transition-all duration-500 ${darkMode ? 'bg-black/60 border-white/5' : 'bg-white border-slate-200/60 shadow-2xl shadow-slate-200/50'}`}>
-        <div className="h-full flex flex-col p-10">
-          <div className="flex items-center space-x-4 mb-14">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-2xl ${themeColor.bg} ${themeColor.glow}`}><Zap size={32} /></div>
-            <div className="flex flex-col">
-              <span className={`font-black text-2xl tracking-tighter leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>SHAHAN<span className={themeColor.text}>LAB</span></span>
-              <span className="text-[10px] text-slate-400 font-black uppercase tracking-[0.4em] mt-2">AI Assessment</span>
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden" 
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar — Slide over on mobile, fixed on desktop */}
+      <aside className={`fixed lg:relative z-50 h-full w-80 border-r transition-all duration-500 transform ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      } ${darkMode ? 'bg-black border-white/5' : 'bg-white border-slate-200'}`}>
+        <div className="h-full flex flex-col p-8 lg:p-10">
+          <div className="flex items-center justify-between mb-14">
+            <div className="flex items-center space-x-4">
+              <div className={`w-12 h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center text-white shadow-2xl ${themeColor.bg} ${themeColor.glow}`}><Zap size={28} /></div>
+              <div className="flex flex-col">
+                <span className={`font-black text-xl lg:text-2xl tracking-tighter leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>SHAHAN<span className={themeColor.text}>LAB</span></span>
+                <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.3em] mt-1.5">AI Assessment</span>
+              </div>
             </div>
+            <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 hover:bg-black/5 rounded-xl"><Trash2 size={24} className="text-slate-400 rotate-45" /></button>
           </div>
 
-          <nav className="flex-1 space-y-3">
+          <nav className="flex-1 space-y-2 lg:space-y-3 overflow-y-auto pr-2 custom-scrollbar">
             {menu.map((item) => (
-              <button key={item.id} onClick={() => setActive(item.id)} className={`w-full flex items-center space-x-5 px-6 py-4 rounded-2xl transition-all group relative overflow-hidden ${active === item.id ? `${themeColor.bg} text-white shadow-xl ${themeColor.glow}` : darkMode ? 'text-slate-500 hover:text-white hover:bg-white/5' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}>
-                <item.icon size={20} className="shrink-0" />
-                <span className="font-black text-[11px] uppercase tracking-widest">{item.label}</span>
+              <button 
+                key={item.id} 
+                onClick={() => { setActive(item.id); setIsSidebarOpen(false); }} 
+                className={`w-full flex items-center space-x-4 lg:space-x-5 px-5 lg:px-6 py-3 lg:py-4 rounded-xl lg:rounded-2xl transition-all group relative overflow-hidden ${active === item.id ? `${themeColor.bg} text-white shadow-xl ${themeColor.glow}` : darkMode ? 'text-slate-500 hover:text-white hover:bg-white/5' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+              >
+                <item.icon size={18} className="shrink-0" />
+                <span className="font-black text-[10px] lg:text-[11px] uppercase tracking-widest">{item.label}</span>
                 {active === item.id && <ChevronRight size={14} className="ml-auto opacity-50" />}
               </button>
             ))}
           </nav>
 
-          <div className="pt-10 border-t border-slate-200/50 space-y-6">
+          <div className="pt-8 border-t border-slate-200/50 space-y-6">
             {/* AI Engine Settings */}
             <div className="px-2 space-y-4">
               <div className="space-y-2">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">API Engine</span>
-                <div className={`relative flex items-center p-1 rounded-xl border ${darkMode ? 'bg-black/40 border-white/10' : 'bg-slate-50 border-slate-200 shadow-inner'}`}>
-                  <input 
-                    type="password" 
-                    value={userApiKey}
-                    onChange={(e) => setUserApiKey(e.target.value)}
-                    className={`w-full bg-transparent p-2 text-xs outline-none font-mono ${darkMode ? 'text-emerald-400' : 'text-slate-700'}`}
-                    placeholder="Gemini API Key..."
-                  />
+                <div className={`relative flex items-center p-1 rounded-xl border ${darkMode ? 'bg-black/40 border-white/10 text-emerald-400' : 'bg-slate-50 border-slate-200 text-slate-700 shadow-inner'}`}>
+                  <input type="password" value={userApiKey} onChange={(e) => setUserApiKey(e.target.value)} className="w-full bg-transparent p-2 text-xs outline-none font-mono" placeholder="Gemini API Key..." />
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <div className={`relative p-1 rounded-xl border ${darkMode ? 'bg-black/40 border-white/10' : 'bg-slate-50 border-slate-200 shadow-inner'}`}>
-                  <select 
-                    value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    className={`w-full bg-transparent p-2 text-[10px] uppercase font-black tracking-widest outline-none cursor-pointer ${darkMode ? 'text-white' : 'text-slate-700'}`}
-                  >
-                    {MODEL_OPTIONS.map(group => (
-                      <optgroup key={group.group} label={group.group} className={darkMode ? 'bg-slate-900 text-slate-400' : 'bg-white text-slate-400'}>
-                        {group.models.map(m => (
-                          <option key={m.id} value={m.id} className={darkMode ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
-                            {m.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
+              <div className={`relative p-1 rounded-xl border ${darkMode ? 'bg-black/40 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-700 shadow-inner'}`}>
+                <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="w-full bg-transparent p-2 text-[10px] uppercase font-black tracking-widest outline-none cursor-pointer">
+                  {MODEL_OPTIONS.map(group => (
+                    <optgroup key={group.group} label={group.group} className={darkMode ? 'bg-slate-900' : 'bg-white'}>
+                      {group.models.map(m => <option key={m.id} value={m.id} className={darkMode ? 'bg-slate-900' : 'bg-white'}>{m.name}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
               </div>
             </div>
 
             <div className="flex items-center justify-between px-2">
-              <button 
-                onClick={() => setDarkMode(!darkMode)} 
-                className={`p-4 rounded-[1.5rem] border transition-all ${
-                  darkMode 
-                    ? 'bg-white/10 border-white/10 text-amber-400' 
-                    : 'bg-white border-slate-200 text-slate-700 shadow-md hover:shadow-lg'
-                }`}
-              >
+              <button onClick={() => setDarkMode(!darkMode)} className={`p-4 rounded-[1.5rem] border transition-all ${darkMode ? 'bg-white/10 border-white/10 text-amber-400' : 'bg-white border-slate-200 text-slate-700 shadow-md'}`}>
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
               <div className="flex space-x-2">
@@ -945,39 +944,56 @@ const App = () => {
       </aside>
 
       {/* Main Content Workspace */}
-      <main className="flex-1 overflow-y-auto scroll-smooth p-16 custom-scrollbar relative z-10">
-        <header className="mb-20 flex flex-col lg:flex-row lg:items-end justify-between gap-12 animate-in fade-in slide-in-from-top-10 duration-1000">
+      <main className="flex-1 h-screen overflow-y-auto scroll-smooth p-6 lg:p-16 custom-scrollbar relative z-10 pt-24 lg:pt-16">
+        
+        {/* Mobile Toggle Button */}
+        <button 
+          onClick={() => setIsSidebarOpen(true)}
+          className={`fixed top-6 left-6 z-40 p-3 rounded-2xl border lg:hidden shadow-xl transition-all active:scale-95 ${
+            darkMode ? 'bg-black/80 border-white/10 text-white backdrop-blur-md' : 'bg-white border-slate-200 text-slate-900'
+          }`}
+        >
+          <BrainCircuit size={24} />
+        </button>
+
+        <header className="mb-14 lg:mb-20 flex flex-col lg:flex-row lg:items-end justify-between gap-10 lg:gap-12 animate-in fade-in slide-in-from-top-10 duration-1000">
           <div>
-            <div className="flex items-center space-x-3 mb-6">
-              <Badge variant="accent" darkMode={darkMode}>Active Candidate Session</Badge>
-              <Badge variant="success" darkMode={darkMode}>Core Gemini 2.5 Active</Badge>
+            <div className="flex items-center space-x-3 mb-6 flex-wrap gap-y-2">
+              <Badge variant="accent" darkMode={darkMode}>Active Core Session</Badge>
+              <Badge variant="success" darkMode={darkMode}>Direct Link: Mobile-Native</Badge>
             </div>
-            <h1 className={`text-7xl font-black tracking-tighter leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+            <h1 className={`text-4xl lg:text-7xl font-black tracking-tighter leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>
               Engineer <span className={themeColor.text}>Shahan Lab</span>
             </h1>
-            <p className="text-slate-500 text-2xl mt-6 font-medium max-w-3xl">AI Advertising Engineering Skills Assessment Platform</p>
+            <p className="text-slate-500 text-lg lg:text-2xl mt-4 lg:mt-6 font-medium max-w-3xl leading-relaxed">AI Advertising Engineering Skills Assessment Platform</p>
           </div>
 
-          <GlassCard darkMode={darkMode} themeColor={themeColor} className="p-8 min-w-[400px]">
-            <div className="grid grid-cols-2 gap-10">
+          <GlassCard darkMode={darkMode} themeColor={themeColor} className="p-6 lg:p-8 min-w-full lg:min-w-[400px]">
+            <div className="grid grid-cols-2 gap-6 lg:gap-10">
               <div className="space-y-1.5">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Candidate</span>
-                <div className="flex items-center space-x-3 font-black text-base uppercase"><User size={16} className={themeColor.text} /><span>{candidateInfo.name}</span></div>
+                <span className="text-[9px] lg:text-[10px] font-black text-slate-400 uppercase tracking-widest block">Candidate</span>
+                <div className="flex items-center space-x-2 lg:space-x-3 font-black text-xs lg:text-base uppercase">
+                  <User size={14} className={themeColor.text} />
+                  <span>{candidateInfo.name}</span>
+                </div>
               </div>
               <div className="space-y-1.5">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Date</span>
-                <div className="flex items-center space-x-3 font-black text-base"><Calendar size={16} className={themeColor.text} /><span>{candidateInfo.date}</span></div>
+                <span className="text-[9px] lg:text-[10px] font-black text-slate-400 uppercase tracking-widest block">Date</span>
+                <div className="flex items-center space-x-2 lg:space-x-3 font-black text-xs lg:text-base">
+                  <Calendar size={14} className={themeColor.text} />
+                  <span>{candidateInfo.date}</span>
+                </div>
               </div>
             </div>
-            <div className="mt-8 pt-8 border-t border-slate-200/50 flex justify-between gap-8 text-center">
-              <div><div className="text-2xl font-black">4 Hours</div><div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Duration</div></div>
-              <div><div className="text-2xl font-black">100</div><div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pts Max</div></div>
-              <div><div className={`text-2xl font-black ${themeColor.text}`}>70</div><div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pass Mark</div></div>
+            <div className="mt-6 lg:mt-8 pt-6 lg:pt-8 border-t border-slate-200/50 flex justify-between gap-6 lg:gap-8 text-center">
+              <div><div className="text-xl lg:text-2xl font-black">4 Hours</div><div className="text-[8px] lg:text-[9px] font-black text-slate-400 uppercase tracking-widest">Duration</div></div>
+              <div><div className="text-xl lg:text-2xl font-black">100</div><div className="text-[8px] lg:text-[9px] font-black text-slate-400 uppercase tracking-widest">Pts Max</div></div>
+              <div><div className={`text-xl lg:text-2xl font-black ${themeColor.text}`}>70</div><div className="text-[8px] lg:text-[9px] font-black text-slate-400 uppercase tracking-widest">Pass Mark</div></div>
             </div>
           </GlassCard>
         </header>
 
-        <div className="max-w-[1400px] mx-auto pb-40">
+        <div className="max-w-[1400px] mx-auto pb-40 px-1">
           <AnimatePresence mode="wait">
             <motion.div key={active} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.4 }}>
               {active === 't1.1' && <Task11_Copywriting darkMode={darkMode} themeColor={themeColor} state={t11State} setState={setT11State} apiKey={userApiKey} model={selectedModel} />}
