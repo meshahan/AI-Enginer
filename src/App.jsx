@@ -11,9 +11,17 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- Configuration ---
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || ""; 
-const PRIMARY_MODEL = "gemini-2.5-flash";
-const FALLBACK_MODEL = "gemini-2.5-flash-lite";
+const DEFAULT_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+const DEFAULT_MODEL = "gemini-2.0-flash"; // Modern default
+const FALLBACK_MODEL = "gemini-1.5-flash"; 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8003";
+
+const MODEL_OPTIONS = [
+  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
+  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
+  { id: 'gemini-1.5-flash-8b', name: 'Gemini 1.5 Flash-8B' },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
+];
 
 const THEMES = {
   purple: { primary: 'purple', color: '#a855f7', gradient: 'from-purple-600 via-fuchsia-600 to-indigo-600', ring: 'focus:ring-purple-500', text: 'text-purple-500', bg: 'bg-purple-600', glow: 'shadow-purple-500/20' },
@@ -24,8 +32,9 @@ const THEMES = {
 // --- API Logic ---
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
-async function callGemini(payload, model = PRIMARY_MODEL, retries = 3) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+async function callGemini(payload, currentApiKey, model = DEFAULT_MODEL, retries = 3) {
+  if (!currentApiKey) throw new Error("API Key is missing. Please enter it in the configuration panel.");
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentApiKey}`;
   for (let i = 0; i < retries; i++) {
     try {
       const response = await fetch(url, {
@@ -41,7 +50,8 @@ async function callGemini(payload, model = PRIMARY_MODEL, retries = 3) {
       return await response.json();
     } catch (err) {
       if (i === retries - 1) {
-        if (model === PRIMARY_MODEL) return callGemini(payload, FALLBACK_MODEL, 3);
+        // Fallback for primary failures
+        if (model === DEFAULT_MODEL && FALLBACK_MODEL) return callGemini(payload, currentApiKey, FALLBACK_MODEL, 3);
         throw err;
       }
       await delay(Math.pow(2, i) * 1000);
@@ -200,7 +210,7 @@ const FormattedTypewriter = ({ text, speed = 12, themeColor, isAi, animate = tru
 
 // --- Section Modules ---
 
-const Task11_Copywriting = ({ darkMode, themeColor, state, setState }) => {
+const Task11_Copywriting = ({ darkMode, themeColor, state, setState, apiKey, model }) => {
   const [loading, setLoading] = useState(false);
   const { brief, results } = state;
 
@@ -213,7 +223,7 @@ const Task11_Copywriting = ({ darkMode, themeColor, state, setState }) => {
         systemInstruction: { parts: [{ text: "You are a professional ad copywriter. Output MUST be strictly JSON: { v1: { headline, tagline, body, cta }, v2, v3 }" }] },
         generationConfig: { responseMimeType: "application/json" }
       };
-      const data = await callGemini(payload);
+      const data = await callGemini(payload, apiKey, model);
       setState(p => ({ ...p, results: JSON.parse(data.candidates[0].content.parts[0].text) }));
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -255,7 +265,7 @@ const Task11_Copywriting = ({ darkMode, themeColor, state, setState }) => {
   );
 };
 
-const Task12_PromptChallenge = ({ darkMode, themeColor, state, setState }) => {
+const Task12_PromptChallenge = ({ darkMode, themeColor, state, setState, apiKey, model }) => {
   const [loading, setLoading] = useState(false);
   const { weakInput, result } = state;
 
@@ -268,7 +278,7 @@ const Task12_PromptChallenge = ({ darkMode, themeColor, state, setState }) => {
         systemInstruction: { parts: [{ text: "You are a Senior Prompt Architect. Rewrite the weak prompt into a high-performance refined version using Role Prompting, Few-Shot, and Chain-of-Thought. Return strictly JSON: { improved_prompt, techniques: string[], explanation, enhancement_metrics: { clarity_gain: number, structure_gain: number, creative_impact: number }, comparison: { weak_output, refined_output } }. Values for gains should be 1-100." }] },
         generationConfig: { responseMimeType: "application/json" }
       };
-      const data = await callGemini(payload);
+      const data = await callGemini(payload, apiKey, model);
       setState(p => ({ ...p, result: JSON.parse(data.candidates[0].content.parts[0].text) }));
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -369,7 +379,7 @@ const Task12_PromptChallenge = ({ darkMode, themeColor, state, setState }) => {
   );
 };
 
-const Task21_BriefAnalyzer = ({ darkMode, themeColor, state, setState }) => {
+const Task21_BriefAnalyzer = ({ darkMode, themeColor, state, setState, apiKey, model }) => {
   const [loading, setLoading] = useState(false);
   const { text, analysis } = state;
 
@@ -381,7 +391,7 @@ const Task21_BriefAnalyzer = ({ darkMode, themeColor, state, setState }) => {
         systemInstruction: { parts: [{ text: "Analyze campaign brief. Return JSON: { audience, key_messages, tone, channels, risks }" }] },
         generationConfig: { responseMimeType: "application/json" }
       };
-      const res = await callGemini(payload);
+      const res = await callGemini(payload, apiKey, model);
       setState(p => ({ ...p, analysis: JSON.parse(res.candidates[0].content.parts[0].text) }));
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -441,7 +451,7 @@ const Task21_BriefAnalyzer = ({ darkMode, themeColor, state, setState }) => {
   );
 };
 
-const Task22_VisionAudit = ({ darkMode, themeColor, state, setState }) => {
+const Task22_VisionAudit = ({ darkMode, themeColor, state, setState, apiKey, model }) => {
   const [loading, setLoading] = useState(false);
   const { preview, data } = state;
 
@@ -480,7 +490,7 @@ const Task22_VisionAudit = ({ darkMode, themeColor, state, setState }) => {
         ]} ],
         generationConfig: { responseMimeType: "application/json" }
       };
-      const res = await callGemini(payload);
+      const res = await callGemini(payload, apiKey, model);
       const parsed = JSON.parse(res.candidates[0].content.parts[0].text);
       // Normalize safety to always be a number
       parsed.safety = normalizeSafetyScore(parsed.safety);
@@ -572,7 +582,7 @@ const Task23_RAGBot = ({ darkMode, themeColor, state, setState }) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('http://localhost:8003/upload', {
+      const res = await fetch(`${BACKEND_URL}/upload`, {
         method: 'POST',
         body: formData
       });
@@ -599,7 +609,7 @@ const Task23_RAGBot = ({ darkMode, themeColor, state, setState }) => {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:8003/chat', {
+      const res = await fetch(`${BACKEND_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: msg })
@@ -788,8 +798,10 @@ const Section3_Practical = ({ darkMode, themeColor, state, setState }) => {
 
 const App = () => {
   const [active, setActive] = useState('t1.1');
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
   const [currentTheme, setCurrentTheme] = useState('purple');
+  const [userApiKey, setUserApiKey] = useState(DEFAULT_API_KEY);
+  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL);
   const themeColor = THEMES[currentTheme];
 
   // Lifted Global State Objects
@@ -847,8 +859,47 @@ const App = () => {
           </nav>
 
           <div className="pt-10 border-t border-slate-200/50 space-y-6">
+            {/* AI Engine Settings */}
+            <div className="px-2 space-y-4">
+              <div className="space-y-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">API Engine</span>
+                <div className={`relative flex items-center p-1 rounded-xl border ${darkMode ? 'bg-black/40 border-white/10' : 'bg-slate-50 border-slate-200 shadow-inner'}`}>
+                  <input 
+                    type="password" 
+                    value={userApiKey}
+                    onChange={(e) => setUserApiKey(e.target.value)}
+                    className={`w-full bg-transparent p-2 text-xs outline-none font-mono ${darkMode ? 'text-emerald-400' : 'text-slate-700'}`}
+                    placeholder="Gemini API Key..."
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className={`relative p-1 rounded-xl border ${darkMode ? 'bg-black/40 border-white/10' : 'bg-slate-50 border-slate-200 shadow-inner'}`}>
+                  <select 
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    className={`w-full bg-transparent p-2 text-[10px] uppercase font-black tracking-widest outline-none cursor-pointer ${darkMode ? 'text-white' : 'text-slate-700'}`}
+                  >
+                    {MODEL_OPTIONS.map(m => (
+                      <option key={m.id} value={m.id} className={darkMode ? 'bg-slate-900' : 'bg-white'}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between px-2">
-              <button onClick={() => setDarkMode(!darkMode)} className={`p-4 rounded-[1.5rem] border transition-all ${darkMode ? 'bg-white/10 border-white/10 text-amber-400' : 'bg-white border-slate-200 text-slate-700 shadow-md'}`}>
+              <button 
+                onClick={() => setDarkMode(!darkMode)} 
+                className={`p-4 rounded-[1.5rem] border transition-all ${
+                  darkMode 
+                    ? 'bg-white/10 border-white/10 text-amber-400' 
+                    : 'bg-white border-slate-200 text-slate-700 shadow-md hover:shadow-lg'
+                }`}
+              >
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
               <div className="flex space-x-2">
@@ -897,10 +948,10 @@ const App = () => {
         <div className="max-w-[1400px] mx-auto pb-40">
           <AnimatePresence mode="wait">
             <motion.div key={active} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.4 }}>
-              {active === 't1.1' && <Task11_Copywriting darkMode={darkMode} themeColor={themeColor} state={t11State} setState={setT11State} />}
-              {active === 't1.2' && <Task12_PromptChallenge darkMode={darkMode} themeColor={themeColor} state={t12State} setState={setT12State} />}
-              {active === 't2.1' && <Task21_BriefAnalyzer darkMode={darkMode} themeColor={themeColor} state={t21State} setState={setT21State} />}
-              {active === 't2.2' && <Task22_VisionAudit darkMode={darkMode} themeColor={themeColor} state={t22State} setState={setT22State} />}
+              {active === 't1.1' && <Task11_Copywriting darkMode={darkMode} themeColor={themeColor} state={t11State} setState={setT11State} apiKey={userApiKey} model={selectedModel} />}
+              {active === 't1.2' && <Task12_PromptChallenge darkMode={darkMode} themeColor={themeColor} state={t12State} setState={setT12State} apiKey={userApiKey} model={selectedModel} />}
+              {active === 't2.1' && <Task21_BriefAnalyzer darkMode={darkMode} themeColor={themeColor} state={t21State} setState={setT21State} apiKey={userApiKey} model={selectedModel} />}
+              {active === 't2.2' && <Task22_VisionAudit darkMode={darkMode} themeColor={themeColor} state={t22State} setState={setT22State} apiKey={userApiKey} model={selectedModel} />}
               {active === 't2.3' && <Task23_RAGBot darkMode={darkMode} themeColor={themeColor} state={t23State} setState={setT23State} />}
               {active === 's3' && <Section3_Practical darkMode={darkMode} themeColor={themeColor} state={s3State} setState={setS3State} />}
             </motion.div>
