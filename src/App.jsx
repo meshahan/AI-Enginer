@@ -17,10 +17,38 @@ const FALLBACK_MODEL = "gemini-1.5-flash";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8003";
 
 const MODEL_OPTIONS = [
-  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
-  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
-  { id: 'gemini-1.5-flash-8b', name: 'Gemini 1.5 Flash-8B' },
-  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
+  { 
+    group: "OpenAI (GPT)", 
+    models: [
+      { id: "gpt-5.4-nano", name: "GPT-5.4 Nano" },
+      { id: "gpt-5.4-mini", name: "GPT-5.4 Mini" },
+      { id: "gpt-4.1-nano", name: "GPT-4.1 Nano" },
+      { id: "gpt-4o-mini", name: "GPT-4o-mini" },
+    ]
+  },
+  { 
+    group: "Google (Gemini)", 
+    models: [
+      { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash-Lite" },
+      { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash-Lite" },
+      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
+    ]
+  },
+  { 
+    group: "Ollama (Local / Free)", 
+    models: [
+      { id: "phi-4-mini", name: "Phi-4-mini" },
+      { id: "llama-3.3", name: "Llama 3.3" },
+      { id: "gemma-3", name: "Gemma 3" },
+      { id: "qwen-3", name: "Qwen 3" },
+      { id: "mistral-small-3", name: "Mistral Small 3" },
+      { id: "deepseek-v3.2-exp", name: "DeepSeek V3.2-Exp" },
+      { id: "deepseek-v3.2", name: "DeepSeek V3.2" },
+      { id: "minimax-m2.1", name: "MiniMax M2.1" },
+      { id: "devstral-2", name: "Devstral 2" },
+    ]
+  }
 ];
 
 const THEMES = {
@@ -881,10 +909,14 @@ const App = () => {
                     onChange={(e) => setSelectedModel(e.target.value)}
                     className={`w-full bg-transparent p-2 text-[10px] uppercase font-black tracking-widest outline-none cursor-pointer ${darkMode ? 'text-white' : 'text-slate-700'}`}
                   >
-                    {MODEL_OPTIONS.map(m => (
-                      <option key={m.id} value={m.id} className={darkMode ? 'bg-slate-900' : 'bg-white'}>
-                        {m.name}
-                      </option>
+                    {MODEL_OPTIONS.map(group => (
+                      <optgroup key={group.group} label={group.group} className={darkMode ? 'bg-slate-900 text-slate-400' : 'bg-white text-slate-400'}>
+                        {group.models.map(m => (
+                          <option key={m.id} value={m.id} className={darkMode ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </div>
